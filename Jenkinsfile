@@ -12,7 +12,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Running Gitleaks scan..."
-                    gitleaks detect --source . --report-path gitleaks-report.json --exit-code 1
+                    gitleaks dir --source . --report-path gitleaks1-report.json --exit-code 1
                 '''
             }
         }
@@ -33,3 +33,4 @@ pipeline {
         }
     }
 }
+
