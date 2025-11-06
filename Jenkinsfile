@@ -1,36 +1,40 @@
 pipeline {
-    agent any
+  agent any
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Run Gitleaks Scan') {
-            steps {
-                sh '''
-                    echo "Running Gitleaks scan..."
-                    gitleaks dir --report-path gitleaks-report.json --exit-code 1
-                '''
-            }
-        }
-
-        stage('Post Scan Report') {
-            steps {
-                archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
-            }
-        }
+  stages {
+    stage('Checkout Code') {
+      steps {
+        checkout scm
+      }
     }
 
-    post {
-        failure {
-            echo "❌ Gitleaks detected secrets! Check gitleaks-report.json for details."
-        }
-        success {
-            echo "✅ No secrets found by Gitleaks."
-        }
+    stage('Run GitLeaks Scan') {
+      steps {
+        sh '''
+          echo "🔍 Running GitLeaks scan for AWS secrets and other credentials..."
+
+          # Run the scan and save a JSON report
+          gitleaks detect --source=. \
+            --report-format=json \
+            --report-path=gitleaks-report.json \
+            --verbose --redact --exit-code 1
+        '''
+      }
     }
+  }
+
+  post {
+    always {
+      echo "📄 Archiving GitLeaks report..."
+      archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true
+    }
+
+    failure {
+      echo '❌ GitLeaks scan failed — potential secrets found! Check the console or the report.'
+    }
+
+    success {
+      echo '✅ GitLeaks scan passed — no secrets detected.'
+    }
+  }
 }
-
